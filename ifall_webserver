@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# /etc/init.d/scripts
+# Description: Script for ifall web server
+# ————————————————–
+#
+### BEGIN INIT INFO
+# Provides: Scripts
+# Required-Start: $network $local_fs $syslog
+# Required-Stop: $local_fs $syslog
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Description: Start Python scripts to provide mapping services
+### END INIT INFO
+
+
+PIDFILE=/var/run/ifall/ifall_webserver
+DAEMONLOG=/var/log/ifall/daemon/daemon.log
+ 
+case "$1" in
+ start)
+   if [ ! -f $PIDFILE ] ; then
+		echo "Starting ifall web server..."
+		su safelinq -c "nohup /usr/bin/python -u /opt/ifall/ifall_webserver.py 0.0.0.0 9000 > $DAEMONLOG 2>&1 &"
+   else
+  	 for pid in $(cat $PIDFILE) ; do
+		if ! ps --no-headers p "$pid" | grep socket > /dev/null ; then
+			echo "Starting ifall web server..."
+			su safelinq -c "nohup /usr/bin/python -u /opt/ifall/ifall_webserver.py 0.0.0.0 9000 > $DAEMONLOG 2>&1 &"
+		else 
+			echo "ifall web server is already running!!"
+        fi
+   done
+  fi
+  ;;
+ stop)
+  if [ ! -f $PIDFILE ] ; then
+                echo "ifall web server is not running"
+  else
+   	for pid in $(cat $PIDFILE) ; do
+                if ! ps --no-headers p "$pid" | grep socket > /dev/null ; then
+                        echo "ifall web server is not running"
+                else
+                        echo "Stopping ifall web server..."
+			kill -9 $pid
+  	        fi
+   	done
+  fi
+  ;;
+
+ restart)
+   $0 stop
+   sleep 1
+   $0 start
+   ;;
+ *)
+   echo "usage: $0 {start|stop|restart}"  
+esac
+
+exit 0
